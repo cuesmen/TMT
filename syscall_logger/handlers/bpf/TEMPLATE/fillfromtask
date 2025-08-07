@@ -1,0 +1,11 @@
+static void fill_task_data(struct data_t *data) {
+    struct task_struct *task = (struct task_struct *)bpf_get_current_task();
+
+	data->timestamp = bpf_ktime_get_boot_ns();
+	data->parent_pid = task->real_parent->pid;
+    data->pgid = task->group_leader->pid;
+    data->tid = bpf_get_current_pid_tgid() & 0xFFFFFFFF;
+    data->tgid = task->tgid;
+
+    bpf_get_current_comm(&data->command, sizeof(data->command));
+}

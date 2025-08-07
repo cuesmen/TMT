@@ -1,0 +1,68 @@
+images:
+# Try to use release-yyyyMMdd image if available. Note that release-yyyyMMdd will be removed after several months.
+- location: "https://cloud-images.ubuntu.com/releases/22.04/release/ubuntu-22.04-server-cloudimg-amd64.img"
+  arch: "x86_64"
+- location: "https://cloud-images.ubuntu.com/releases/22.04/release/ubuntu-22.04-server-cloudimg-arm64.img"
+  arch: "aarch64"
+
+mounts:
+- location: "~"
+  writable: true
+- location: "/tmp/lima"
+  writable: true
+provision:
+- mode: system
+  script: |
+    apt-get update
+    apt-get install -y apt-transport-https ca-certificates curl clang llvm jq
+    apt-get install -y libelf-dev libpcap-dev libbfd-dev binutils-dev build-essential make 
+    apt-get install -y linux-tools-common linux-tools-5.15.0-41-generic bpfcc-tools
+    apt-get install -y python3-pip
+    apt-get install --yes bsdutils
+    apt-get install --yes build-essential
+    apt-get install --yes pkgconf
+    apt-get install --yes llvm-12 clang-12
+    apt-get install --yes clang-format-12
+    apt-get install --yes zlib1g-dev libelf-dev
+    apt-get install --yes protobuf-compiler
+    # apt-get install bpfcc-tools linux-headers-$(uname -r)
+
+    # sudo snap install --devmode bpftrace
+
+    # it downloads binaries with version appended
+    # like llvm-strip-12, clang-12 etc
+    # bpf stuff uses plain names like llvm-strip, clang and fails
+    # to make them use this creating soft links with plain names
+    for tool in "clang" "llc" "llvm-strip" 
+    do 
+      path=$(which $tool-12) 
+      sudo ln -s $path ${path%-*} 
+    done 
+
+    # uname -r returns kernel version
+    # need linux-tools for kernel specific
+    apt-get install --yes linux-tools-$(uname -r)
+
+    # keep gp off, self signed cert issue else it'll fail to download
+    # or add --no-check-certificate
+    wget --quiet https://golang.org/dl/go1.20.1.linux-arm64.tar.gz
+    tar -C /usr/local -xzf go1.20.1.linux-arm64.tar.gz
+    echo 'export PATH=$PATH:/usr/local/go/bin' >> ~/.profile
+
+    apt-get install -y zip bison build-essential cmake flex git libedit-dev \
+      libllvm14 llvm-14-dev libclang-14-dev python3 zlib1g-dev libelf-dev libfl-dev python3-setuptools \
+      liblzma-dev libdebuginfod-dev arping netperf iperf
+
+    git clone https://github.com/iovisor/bcc.git
+    mkdir bcc/build; cd bcc/build
+    cmake ..
+    make
+    make install
+
+    cmake -DPYTHON_CMD=python3 .. # build python3 binding
+    pushd src/python/
+    make
+    make install
+    popd
+
+

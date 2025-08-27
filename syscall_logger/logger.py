@@ -19,9 +19,22 @@ class SyscallLogger:
             h.start()
 
     def _stop(self):
-        print_info("Stopping handlers...")
+        print_info("Coordinated stop...")
+
         for h in self.handlers:
-            h.stop()
+            h.freeze_producer()        # cfg_enabled=0
+
+        totals = {}
+        for h in self.handlers:
+            totals[h.name] = h.snapshot_total()  # sum ev_count per-CPU
+
+        for h in self.handlers:
+            h.drain_until(totals[h.name])        # poll until read_events == total
+
+        for h in self.handlers:
+            h.detach()                # if supported
+            h.stop()                  # join poll thread
+
 
     def _log(self):
         if self.command is None:

@@ -1,12 +1,12 @@
 from syscall_logger.handlers.utils.basehandler import BaseHandler
 from bcc import BPF
+import ctypes as ct
 import os
 
 from utils.logger import print_info, err_exit, print_warn
 
 
 class ForkHandler(BaseHandler):
-
     def _handle(self, cpu, data, size):
         BaseHandler._handle_template(self, data, self.program["fork_output"].event(data))
 
@@ -23,8 +23,26 @@ class ForkHandler(BaseHandler):
         print_info("Compiled fork filter program")
 
     def install(self):
+        # open ring buffer
         self.program["fork_output"].open_ring_buffer(self._handle)
-        if not self.program.attach_tracepoint(tp="sched:sched_process_fork", fn_name="trace_fork"):
-            err_exit("Error: unable to attach fork tracepoint")
 
-        print_info("Installed fork handler")
+        # attach tracepoint
+        try:
+            self.program.attach_tracepoint(tp="sched:sched_process_fork", fn_name="trace_fork")
+            print_info("Installed fork handler (sched:sched_process_fork)")
+        except Exception as e:
+            err_exit(f"Unable to attach fork tracepoint: {e}")
+
+        # enable producer
+        try:
+            self.program["cfg_enabled"][ct.c_uint(0)] = ct.c_uint(1)
+            print_info("Enabled producer for fork")
+        except KeyError:
+            print_warn("cfg_enabled map not present (producer always-on)")
+
+    def detach(self):
+        # clean detach
+        try:
+            self.program.detach_tracepoint(tp="sched:sched_process_fork")
+        except Exception:
+            pass

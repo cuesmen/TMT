@@ -203,3 +203,7 @@ __marimo__/
 
 # Streamlit
 .streamlit/secrets.toml
+
+# Generated Assets
+*.png 
+*.csv

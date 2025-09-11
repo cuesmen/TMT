@@ -2,6 +2,7 @@
 import os, argparse
 
 from processor.Processor import EventProcessor
+from processor.SwitchProcessor import SwitchProcessor
 from syscall_logger.logger import SyscallLogger
 from utils.logger import err_exit
 
@@ -20,7 +21,7 @@ args = parser.parse_args()
 if not os.geteuid() == 0:
     err_exit("This script must be run as root.")
 
-ebpf_filters = ["exit", "fork", "execve", "clone"] if not args.filters or args.filters == "ALL" else args.filters.split(
+ebpf_filters = ["exit", "fork", "execve", "clone", "switch"] if not args.filters or args.filters == "ALL" else args.filters.split(
     ",")
 
 logger = SyscallLogger(ebpf_filters, timeout=10, user=args.user)
@@ -32,5 +33,10 @@ proc.build_tree(print_tree=args.print_tree)
 proc.compute_intervals(print_intervals=args.print_intervals)
 proc.store_to_csv()
 proc.plot(title=f"Alive processes for: {args.command}")
+
+sp = SwitchProcessor(logger.events)
+sp.build_slices()
+sp.store_csv("oncpu_slices.csv")
+sp.plot_top_runtime_per_cpu(top_n=10, time_unit="ms", outfile_prefix="top_runtime_cpu_")
 
 exit(0)

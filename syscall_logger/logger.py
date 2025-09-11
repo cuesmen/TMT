@@ -7,6 +7,7 @@ from syscall_logger.handlers.exit import ExitHandler
 from syscall_logger.handlers.exitgroup import ExitGroupHandler
 from syscall_logger.handlers.fork import ForkHandler
 from syscall_logger.handlers.execve import ExecveHandler
+from syscall_logger.handlers.switch import SwitchHandler
 from utils.logger import print_info
 
 
@@ -62,6 +63,8 @@ class SyscallLogger:
             elif handler == "clone":
                 self.handlers.append(CloneHandler(timeout))
                 self.handlers.append(Clone3Handler(timeout))
+            elif handler == "switch":                                  
+                self.handlers.append(SwitchHandler(timeout))           
             else:
                 raise Exception("Unknown handler: " + handler)
 

@@ -78,7 +78,7 @@ class BaseHandler:
             pass
 
     def snapshot_total(self):
-        """Somma ev_count per-CPU. Fallback: read_events."""
+        """Sum ev_count per-CPU. Fallback: read_events."""
         total = 0
         try:
             tbl = self.program.get_table("ev_count")

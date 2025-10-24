@@ -16,9 +16,7 @@ Make sure you have:
 
 To build:
 
-    make
-
-(or `cmake --build .` if you use CMake)
+    make clean && make all
 
 This will produce the `tmt` binary.
 

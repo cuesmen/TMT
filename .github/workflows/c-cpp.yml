@@ -20,11 +20,8 @@ jobs:
           sudo apt-get install -y \
             build-essential pkg-config clang llvm \
             libbpf-dev libelf-dev zlib1g-dev
-
       - name: Build
         run: make -j$(nproc)
-
-      # (opzionale) salva i binari prodotti
       - name: Upload artifacts
         if: success()
         uses: actions/upload-artifact@v4

@@ -1,0 +1,36 @@
+name: C/C++ CI
+
+on:
+  push:
+    branches: [ "main" ]
+  pull_request:
+    branches: [ "main" ]
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Install dependencies
+        run: |
+          sudo apt-get update
+          sudo apt-get install -y \
+            build-essential pkg-config clang llvm \
+            libbpf-dev libelf-dev zlib1g-dev
+
+      - name: Build
+        run: make -j$(nproc)
+
+      # (opzionale) salva i binari prodotti
+      - name: Upload artifacts
+        if: success()
+        uses: actions/upload-artifact@v4
+        with:
+          name: build-out
+          path: |
+            bin/*
+            out/*
+          if-no-files-found: ignore

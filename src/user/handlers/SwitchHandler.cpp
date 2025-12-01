@@ -120,15 +120,20 @@ bool SwitchHandler::install() {
             fprintf(stderr, "[switch] failed to enable pid filter\n");
     }
 
-    uint32_t shell_pid = read_pid_file("/tmp/tmt_shell.pid");
-    uint32_t cmd_pid   = read_pid_file("/tmp/tmt_cmd.pid");
-    if (shell_pid) add_tid_if_any(map_allow_, shell_pid);
-    if (cmd_pid) {
-        add_tid_if_any(map_allow_, cmd_pid);
-        add_all_threads_of_pid(map_allow_, cmd_pid); 
-        fprintf(stderr, "[switch] allow tgid=%u and its threads\n", cmd_pid);
+    uint32_t shell_pid = shell_pid_hint_;
+    uint32_t cmd_pid   = cmd_pid_hint_;
+
+    if (!shell_pid && !cmd_pid) {
+        uint32_t k = 0, off = 0;
+        if (bpf_map_update_elem(map_usef_, &k, &off, BPF_ANY) != 0)
+            fprintf(stderr, "[switch] failed to disable pid filter\n");
     } else {
-        fprintf(stderr, "[switch] /tmp/tmt_cmd.pid not found or empty\n");
+        if (shell_pid) add_tid_if_any(map_allow_, shell_pid);
+        if (cmd_pid) {
+            add_tid_if_any(map_allow_, cmd_pid);
+            add_all_threads_of_pid(map_allow_, cmd_pid);
+            fprintf(stderr, "[switch] allow tgid=%u and its threads\n", cmd_pid);
+        }
     }
 
     bpf_program *prog = bpf_object__find_program_by_name(obj_, "trace_sched_switch");
@@ -186,4 +191,9 @@ int SwitchHandler::on_sample(void *data, size_t len) {
     std::lock_guard<std::mutex> lk(mtx_);
     events_.push_back(std::move(e));
     return 0;
+}
+
+void SwitchHandler::set_root_pids(uint32_t shell_pid, uint32_t cmd_pid) {
+    shell_pid_hint_ = shell_pid;
+    cmd_pid_hint_   = cmd_pid;
 }

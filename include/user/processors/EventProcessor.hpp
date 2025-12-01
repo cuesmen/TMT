@@ -1,5 +1,5 @@
 #pragma once
-#include "include/common.hpp"
+#include "common.hpp"
 #include <vector>
 #include <string>
 #include <memory>
@@ -13,7 +13,7 @@ struct TimeInterval {
 
 class EventProcessor {
 public:
-    explicit EventProcessor(const std::vector<Event>& evs);
+    explicit EventProcessor(const std::vector<Event>& evs, uint32_t root_pid = 0);
     ~EventProcessor();
 
     void build_tree(bool print_tree = false);
@@ -26,4 +26,5 @@ private:
     std::vector<Event> events_;
     std::unique_ptr<Node> root_;
     std::vector<TimeInterval> time_intervals_;
+    uint32_t root_pid_hint_ = 0;
 };

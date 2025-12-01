@@ -73,13 +73,30 @@ struct Node {
 
 EventProcessor::~EventProcessor() = default;
 
-EventProcessor::EventProcessor(const std::vector<Event>& evs)
-: events_(evs) {
-    if (!events_.empty()) {
-        const auto& first = events_.front();
-        root_ = std::make_unique<Node>(first.pid, first.command, true);
+EventProcessor::EventProcessor(const std::vector<Event>& evs, uint32_t root_pid)
+: events_(evs), root_pid_hint_(root_pid)
+{
+    if (events_.empty())
+        return;
+
+    root_pid = root_pid_hint_;
+    std::string root_comm = "[unknown]";
+
+    if (root_pid == 0) {
+        root_pid  = events_.front().pid;
+        root_comm = events_.front().command;
+    } else {
+        for (const auto& e : events_) {
+            if (e.pid == root_pid) {
+                root_comm = e.command;
+                break;
+            }
+        }
     }
+
+    root_ = std::make_unique<Node>(root_pid, root_comm, true);
 }
+
 
 void EventProcessor::build_tree(bool print_tree) {
     std::cerr << "[WARN] Building process tree...\n";
@@ -109,13 +126,20 @@ void EventProcessor::compute_intervals(bool print_intervals) {
     if (!root_) return;
 
     std::vector<const Event*> evp;
+    evp.reserve(events_.size());
     for (auto& e : events_) evp.push_back(&e);
+
     std::sort(evp.begin(), evp.end(),
               [](const Event* a, const Event* b){ return a->timestamp < b->timestamp; });
 
     time_intervals_.clear();
 
+    uint64_t max_ts = 0;
+
     for (const auto* e : evp) {
+        if (e->timestamp > max_ts)
+            max_ts = e->timestamp;
+
         if (e->event == "fork" || e->event == "clone" || e->event == "clone3") {
             root_->set_alive(e->child_pid);
         }
@@ -132,6 +156,11 @@ void EventProcessor::compute_intervals(bool print_intervals) {
         }
     }
 
+    if (!time_intervals_.empty() && time_intervals_.back().time < max_ts) {
+        int last_alive = time_intervals_.back().alive;
+        time_intervals_.push_back({ max_ts, last_alive });
+    }
+
     std::cerr << "[INFO] Computed " << time_intervals_.size() << " time intervals.\n";
     if (print_intervals) {
         std::cerr << "time,alive\n";
@@ -139,6 +168,7 @@ void EventProcessor::compute_intervals(bool print_intervals) {
             std::cerr << t.time << "," << t.alive << "\n";
     }
 }
+
 
 void EventProcessor::store_to_csv(const std::string& filename) const {
     std::ofstream f(filename);

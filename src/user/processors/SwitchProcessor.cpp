@@ -5,8 +5,8 @@
 #include <algorithm>
 #include <cmath>
 
+//convert unit string to ns scale factor
 static double unit_scale(const std::string& u) {
-    /* convert unit string to ns scale factor */
     if (u == "ns") return 1.0;
     if (u == "us") return 1e3;
     if (u == "ms") return 1e6;
@@ -16,7 +16,6 @@ static double unit_scale(const std::string& u) {
 
 SwitchProcessor::SwitchProcessor(const std::vector<Event>& evs)
 : events_(evs) {
-    /* keep only run/desched events */
     events_.erase(std::remove_if(events_.begin(), events_.end(),
                                  [](const Event& e) {
                                      return !(e.event == "run" || e.event == "desched");
@@ -27,7 +26,6 @@ SwitchProcessor::SwitchProcessor(const std::vector<Event>& evs)
 void SwitchProcessor::build_slices(bool debug) {
     std::cerr << "[SwitchProcessor] Processing " << events_.size() << " events\n";
 
-    /* pid -> (start_ts, cpu, command) for open running intervals */
     std::map<uint32_t, std::tuple<uint64_t, uint32_t, std::string>> open;
     slices_.clear();
 
@@ -42,10 +40,8 @@ void SwitchProcessor::build_slices(bool debug) {
         uint64_t ts  = e.timestamp;
 
         if (e.event == "run") {
-            /* task scheduled in: start (or overwrite) slice */
             open[pid] = {ts, e.cpu, e.command};
         } else if (e.event == "desched") {
-            /* task scheduled out: close slice if present */
             auto it = open.find(pid);
             if (it != open.end()) {
                 auto [start, cpu0, cmd0] = it->second;
@@ -62,7 +58,7 @@ void SwitchProcessor::build_slices(bool debug) {
         }
     }
 
-    /* close any pending slices at the end of trace */
+    // close any pending slices at the end of trace 
     if (!open.empty()) {
         uint64_t end_ts = 0;
         for (const auto& e : events_)
@@ -73,7 +69,7 @@ void SwitchProcessor::build_slices(bool debug) {
             Slice s{
                 pid, cpu0, cmd0,
                 start, end_ts, end_ts - start,
-                "end_of_trace"             // slice truncated at trace end
+                "end_of_trace"         
             };
             slices_.push_back(std::move(s));
             std::cerr << "[SwitchProcessor] Closing pending slice for pid=" << pid << "\n";
@@ -105,7 +101,7 @@ void SwitchProcessor::plot_top_runtime_per_cpu(int top_n,
     }
 
     double scale = unit_scale(time_unit);
-    /* aggregate total runtime per (cpu,pid,command) */
+    // aggregate total runtime per (cpu,pid,command) 
     std::map<std::tuple<uint32_t, uint32_t, std::string>, uint64_t> agg;
 
     for (const auto& s : slices_) {
@@ -118,7 +114,7 @@ void SwitchProcessor::plot_top_runtime_per_cpu(int top_n,
     for (const auto& [k, tot_ns] : agg) {
         auto [cpu, pid, cmd] = k;
         std::string label = cmd + ":" + std::to_string(pid);
-        per_cpu[cpu].push_back({label, tot_ns / scale}); // convert to requested unit
+        per_cpu[cpu].push_back({label, tot_ns / scale});
     }
 
     std::cerr << "[SwitchProcessor] Top per-CPU runtime (unit=" << time_unit << ")\n";

@@ -9,16 +9,22 @@ It captures scheduling and process events directly from the kernel and exports s
 ### Build
 
 Make sure you have:
-- Linux kernel with eBPF support
+- Linux kernel with eBPF support  
 - `clang`
 - `libbpf` development files
-- `make`
+- `cmake`
 
 To build:
 
-    make clean && make all
+    cmake -S . -B build && cmake --build build
 
-This will produce the `tmt` binary.
+This will produce the `tmt_logger` binary under:
+
+    build/bin/tmt_logger
+
+and all compiled eBPF programs under:
+
+    build/bin/*.bpf.o
 
 ---
 
@@ -26,12 +32,13 @@ This will produce the `tmt` binary.
 
 To monitor an application with **TMT**, run:
 
-    sudo bin/tmt_logger --cmd "<command to trace>" [--print-raw]
+    sudo build/bin/tmt_logger --cmd "<command to trace>" [--print-raw]
 
 #### Examples
 
-    sudo bin/tmt_logger --cmd "sleep 1"
-    sudo bin/tmt_logger --cmd "python3 thread_test.py" --print-raw
+    sudo build/bin/tmt_logger --cmd "sleep 1"
+
+    sudo build/bin/tmt_logger --cmd "python3 thread_test.py" --print-raw
 
 #### Options
 - `--cmd "<program>"` — command to execute and trace (required)
@@ -41,10 +48,10 @@ To monitor an application with **TMT**, run:
 
 ### Output
 
-By default, TMT will generate several files under the `out/` directory:
+By default, TMT will generate several files under the `build/out/` directory:
 
-- **out/alive_series.csv** — timeline of active threads per process
-- **out/oncpu_slices.csv** — CPU scheduling slices
+- **build/out/alive_series.csv** — timeline of active threads per process  
+- **build/out/oncpu_slices.csv** — CPU scheduling slices  
 - **Top runtime per CPU** summary printed on screen
 
 ---

@@ -59,6 +59,22 @@
         "typeinfo": "cpp",
         "sched.h": "c",
         "bpf_core_read.h": "c",
-        "bpf_helpers.h": "c"
+        "bpf_helpers.h": "c",
+        "bpf_tracing.h": "c",
+        "common.h": "c",
+        "csignal": "cpp",
+        "strstream": "cpp",
+        "bitset": "cpp",
+        "complex": "cpp",
+        "forward_list": "cpp",
+        "unordered_set": "cpp",
+        "optional": "cpp",
+        "regex": "cpp",
+        "future": "cpp",
+        "iomanip": "cpp",
+        "cfenv": "cpp",
+        "cinttypes": "cpp",
+        "typeindex": "cpp",
+        "variant": "cpp"
     }
 }

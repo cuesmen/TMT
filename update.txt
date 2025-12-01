@@ -1,0 +1,3 @@
+- filtraggio event processor -> va messo non solo in user ma anche in ebpf;
+- tolto system(), bisogna migliorare come leggi il cmd, vedi in SyscallLogger static std::vector<std::string> split_args;
+- sistemate cartelle src e include

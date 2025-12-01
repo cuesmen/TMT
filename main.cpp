@@ -8,6 +8,8 @@
 #include <vector>
 #include <cstring>
 
+#include <args.hxx>
+
 static void usage(const char* prog) {
     std::cerr
         << "Usage:\n"
@@ -21,22 +23,51 @@ int main(int argc, char** argv) {
     std::string cmd;
     bool print_raw = false;
 
-    // TODO!! parse args
-    for (int i = 1; i < argc; ++i) {
-        if (!strcmp(argv[i], "--cmd") && i + 1 < argc) {
-            cmd = argv[++i];
-        } else if (!strcmp(argv[i], "--print-raw")) {
-            print_raw = true;
-        } else {
-            std::cerr << "Unknown arg: " << argv[i] << "\n";
-            usage(argv[0]);
-            return 1;
-        }
-    }
-    if (cmd.empty()) {
-        usage(argv[0]);
+    args::ArgumentParser parser(
+        "TMT: Thread Monitoring Tool",
+        "Trace threads and scheduling behavior of a target program using eBPF."
+    );
+
+    args::HelpFlag help(
+        parser,
+        "help",
+        "Show this help message and exit",
+        {'h', "help"}
+    );
+
+    args::ValueFlag<std::string> cmd_flag(
+        parser,
+        "command",
+        "Command to execute and trace (required)",
+        {"cmd"}
+    );
+
+    args::Flag print_raw_flag(
+        parser,
+        "print-raw",
+        "Print raw kernel events as they are received",
+        {"print-raw"}
+    );
+
+    try {
+        parser.ParseCLI(argc, argv);
+    } catch (const args::Help&) {
+        std::cout << parser << std::endl;
+        return 0;
+    } catch (const args::ParseError& e) {
+        std::cerr << e.what() << "\n\n";
+        std::cerr << parser << std::endl;
         return 1;
     }
+
+    if (!cmd_flag) {
+        usage(argv[0]);
+        std::cerr << "\nError: --cmd is required.\n";
+        return 1;
+    }
+
+    cmd = args::get(cmd_flag);
+    print_raw = print_raw_flag; 
 
     SyscallLogger logger(100);
     logger.run_command(cmd, print_raw);
@@ -47,7 +78,7 @@ int main(int argc, char** argv) {
         return 0;
     }
 
-    EventProcessor ep(evs);
+    EventProcessor ep(logger.events(), logger.root_pid());
     ep.build_tree(false);
     ep.compute_intervals(false);
 

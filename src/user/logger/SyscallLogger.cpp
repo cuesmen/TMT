@@ -6,7 +6,7 @@
 #include <cstdlib>
 #include <sys/stat.h>
 #include <fstream>
-
+#include <sstream>
 
 SyscallLogger::SyscallLogger(int timeout_ms)
 : timeout_ms_(timeout_ms)
@@ -55,28 +55,59 @@ void SyscallLogger::coordinated_stop() {
     }
 }
 
+static std::vector<std::string> split_args(const std::string& cmd) {
+    std::istringstream iss(cmd);
+    std::vector<std::string> out;
+    std::string tok;
+    while (iss >> tok) out.push_back(tok);
+    return out;
+}
+
 void SyscallLogger::run_command(const std::string& cmd, bool print_raw) {
-    const std::string cgpath = "/sys/fs/cgroup/tmt_trace";
-    mkdir(cgpath.c_str(), 0755);
+    pid_t cmd_pid = fork();
+    if (cmd_pid < 0) {
+        std::cerr << "fork() failed: " << strerror(errno) << "\n";
+        return;
+    }
 
-    std::string wrapped_cmd =
-        "echo $$ > /tmp/tmt_shell.pid; "
-        + cmd + " & echo $! > /tmp/tmt_cmd.pid; "
-        "wait $!";
+    if (cmd_pid == 0) {
+        auto args = split_args(cmd);
+        if (args.empty()) {
+            std::cerr << "Empty command\n";
+            _exit(127);
+        }
 
-    system(("/bin/sh -c 'echo $$ > /tmp/tmt_shell.pid; " +
-            cmd + " & echo $! > /tmp/tmt_cmd.pid; exit 0'").c_str());
+        std::vector<char*> argv;
+        argv.reserve(args.size() + 1);
+        for (auto& s : args)
+            argv.push_back(const_cast<char*>(s.c_str()));
+        argv.push_back(nullptr);
+
+        if (execvp(argv[0], argv.data()) < 0) {
+            std::cerr << "execvp failed: " << strerror(errno) << "\n";
+            _exit(127);
+        }
+    }
+
+    // passa the cmd_pid to the Event Processor
+    root_pid_ = static_cast<uint32_t>(cmd_pid);
+
+    // pass the cmd_pid to the SwitchHandler
+    for (auto& h : handlers_) {
+        if (auto* sh = dynamic_cast<SwitchHandler*>(h.get())) {
+            sh->set_root_pids(/*shell_pid=*/0, static_cast<uint32_t>(cmd_pid));
+        }
+    }
 
     if (!install_all()) {
         std::cerr << "No handler installed successfully; aborting.\n";
         return;
     }
 
-    int ret = system("/bin/sh -c 'if [ -f /tmp/tmt_cmd.pid ]; then "
-                     " read pid < /tmp/tmt_cmd.pid; "
-                     " if [ -n \"$pid\" ]; then wait \"$pid\"; fi; "
-                     "fi'");
-    (void)ret;
+    // wait the cmd end
+    if (waitpid(cmd_pid, nullptr, 0) < 0) {
+        std::cerr << "waitpid failed: " << strerror(errno) << "\n";
+    }
 
     coordinated_stop();
 
@@ -85,8 +116,7 @@ void SyscallLogger::run_command(const std::string& cmd, bool print_raw) {
             std::cout << e.timestamp << " " << e.event
                       << " pid=" << e.pid
                       << " child=" << e.child_pid
-                      << " comm=" << e.command
-                      << "\n";
+                      << " comm=" << e.command << "\n";
         }
     }
 }

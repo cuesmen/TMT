@@ -2,15 +2,15 @@
 #include <vector>
 #include <memory>
 #include <string>
-#include "include/common.hpp"
-#include "handlers/BaseHandler.hpp"
-#include "handlers/ExecveHandler.hpp"
-#include "handlers/ForkHandler.hpp"
-#include "handlers/ExitHandler.hpp"
-#include "handlers/CloneHandler.hpp"
-#include "handlers/Clone3Handler.hpp"
-#include "handlers/ExitGroupHandler.hpp"
-#include "handlers/SwitchHandler.hpp"
+#include "common.hpp"
+#include "BaseHandler.hpp"
+#include "ExecveHandler.hpp"
+#include "ForkHandler.hpp"
+#include "ExitHandler.hpp"
+#include "CloneHandler.hpp"
+#include "Clone3Handler.hpp"
+#include "ExitGroupHandler.hpp"
+#include "SwitchHandler.hpp"
 
 class SyscallLogger {
 public:
@@ -22,9 +22,11 @@ public:
     void run_command(const std::string& cmd, bool print_raw = false);
 
     const std::vector<Event>& events() const { return events_; }
+    uint32_t root_pid() const { return root_pid_; }
 
 private:
     std::vector<std::unique_ptr<BaseHandler>> handlers_;
     std::vector<Event> events_;
     int timeout_ms_{100};
+    uint32_t root_pid_ = 0;
 };

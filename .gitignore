@@ -207,3 +207,12 @@ __marimo__/
 # Generated Assets
 *.png 
 *.csv
+
+# Vs Code
+.vscode/
+
+# VmLinux
+vmlinux.h
+
+# Old Folder
+old/

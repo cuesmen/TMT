@@ -34,8 +34,6 @@ protected:
     int set_cfg_enabled_map(int fd);
     int freeze_cfg_enabled_map(int fd);
     uint64_t snapshot_evcount_percpu(int fd);
-
-protected:
     std::string name_;
     int timeout_ms_;
     std::atomic<bool> running_{false};
@@ -45,4 +43,5 @@ protected:
     std::thread poll_thread_;
     std::mutex mtx_;
     std::vector<Event> events_;
+    
 };

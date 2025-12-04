@@ -59,5 +59,6 @@ By default, TMT will generate several files under the `build/out/` directory:
 ### Acknowledgements
 
 TMT was originally developed by [**Stefano Monaldi**](https://www.linkedin.com/in/stefano-monaldi-0a9553296/)  
-and is now maintained by [**Marco Edoardo Santimaria**](https://alpha.di.unito.it/marco-santimaria/) and  
-[**Robert Birke**](https://alpha.di.unito.it/robert-rene-maria-birke/).
+and is now maintained by [**Marco Edoardo Santimaria**](https://alpha.di.unito.it/marco-santimaria/),  
+[**Robert Birke**](https://alpha.di.unito.it/robert-rene-maria-birke/) amd
+[**Cosmin Stoica**](https://www.linkedin.com/in/cosmin-stoica-037331296/)

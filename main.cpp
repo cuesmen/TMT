@@ -32,7 +32,6 @@ static void usage(const char* prog) {
 }
 
 int main(int argc, char** argv) {
-    // Stampa il banner all'avvio
     print_banner();
 
     std::string cmd;

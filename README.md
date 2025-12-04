@@ -1,3 +1,13 @@
+```
+████████╗ ███╗   ███╗ ████████╗
+╚══██╔══╝ ████╗ ████║ ╚══██╔══╝
+   ██║    ██╔████╔██║    ██║   
+   ██║    ██║╚██╔╝██║    ██║   
+   ██║    ██║ ╚═╝ ██║    ██║   
+   ╚═╝    ╚═╝     ╚═╝    ╚═╝   
+ T h r e a d   M o n i t o r i n g   T o o l
+ ```
+
 # TMT: Thread Monitoring Tool
 
 **TMT** is a lightweight **C++ tool** that leverages **eBPF** to trace and analyze how many threads a target application creates and uses during its execution.

@@ -57,27 +57,25 @@ bool ExitHandler::install() {
         fprintf(stderr, "[exit] open_file failed: %s\n", objp.c_str());
         return false;
     }
+
     int err = bpf_object__load(obj_);
     if (err) {
-        const char *libbpf_err = strerror(-err);
-        fprintf(stderr, "[exit] load failed: %s (err=%d)\n",
-                libbpf_err?libbpf_err:"unknown", err);
+        fprintf(stderr, "[exit] load failed: %s\n", strerror(-err));
         return false;
     }
 
-    map_cfg_        = bpf_object__find_map_fd_by_name(obj_, "cfg_enabled");
-    map_ev_         = bpf_object__find_map_fd_by_name(obj_, "ev_count");
-    map_rb_exit_    = bpf_object__find_map_fd_by_name(obj_, "exit_output");
-    map_rb_exitgrp_ = bpf_object__find_map_fd_by_name(obj_, "exit_group_output");
-    if (map_cfg_ < 0 || map_ev_ < 0 || map_rb_exit_ < 0 || map_rb_exitgrp_ < 0) {
-        fprintf(stderr, "[exit] missing maps (cfg_enabled/ev_count/exit_output/exit_group_output)\n");
+    map_cfg_     = bpf_object__find_map_fd_by_name(obj_, "cfg_enabled");
+    map_ev_      = bpf_object__find_map_fd_by_name(obj_, "ev_count");
+    map_rb_exit_ = bpf_object__find_map_fd_by_name(obj_, "exit_output");
+
+    if (map_cfg_ < 0 || map_ev_ < 0 || map_rb_exit_ < 0) {
+        fprintf(stderr, "[exit] missing maps (cfg_enabled/ev_count/exit_output)\n");
         return false;
     }
 
-    bpf_program *exit_prog  = bpf_object__find_program_by_name(obj_, "trace_exit_enter");
-    bpf_program *exitg_prog = bpf_object__find_program_by_name(obj_, "trace_exit_group_enter");
-    if (!exit_prog || !exitg_prog) {
-        fprintf(stderr, "[exit] programs not found in obj\n");
+    bpf_program *exit_prog = bpf_object__find_program_by_name(obj_, "trace_exit_enter");
+    if (!exit_prog) {
+        fprintf(stderr, "[exit] program 'trace_exit_enter' not found in obj\n");
         return false;
     }
 
@@ -86,19 +84,12 @@ bool ExitHandler::install() {
         fprintf(stderr, "[exit] attach sys_enter_exit failed: %s\n", strerror(errno));
         return false;
     }
-    link_exitgrp_ = bpf_program__attach_tracepoint(exitg_prog, "syscalls", "sys_enter_exit_group");
-    if (!link_exitgrp_) {
-        fprintf(stderr, "[exit] attach sys_enter_exit_group failed: %s\n", strerror(errno));
-        return false;
-    }
 
     set_cfg_enabled_map(map_cfg_);
 
-    rb_exit_ctx_    = { this, "exit" };
-    rb_exitgrp_ctx_ = { this, "exit_group" };
-    rb1_ = ring_buffer__new(map_rb_exit_,    sample_cb, &rb_exit_ctx_,    NULL);
-    rb2_ = ring_buffer__new(map_rb_exitgrp_, sample_cb, &rb_exitgrp_ctx_, NULL);
-    if (!rb1_ || !rb2_) {
+    rb_exit_ctx_ = { this, "exit" };
+    rb1_ = ring_buffer__new(map_rb_exit_, sample_cb, &rb_exit_ctx_, NULL);
+    if (!rb1_) {
         fprintf(stderr, "[exit] ring_buffer__new failed\n");
         return false;
     }

@@ -34,9 +34,15 @@ int trace_exit_group(struct trace_event_raw_sys_enter *ctx)
     struct data_t d = {};
     fill_task_data(&d);
 
-    d.pid = bpf_get_current_pid_tgid() >> 32;
-    d.tid = bpf_get_current_pid_tgid() & 0xFFFFFFFF;
-    d.timestamp = bpf_ktime_get_ns();
+    u64 pid_tgid     = bpf_get_current_pid_tgid();
+    __u32 tgid       = pid_tgid >> 32;
+    __u32 tid        = pid_tgid & 0xffffffff;
+
+    d.pid        = tgid;        
+    d.parent_pid = tgid;    
+    d.tid        = tid;
+
+    d.timestamp  = bpf_ktime_get_ns();
 
     if (bpf_ringbuf_output(&exit_group_output, &d, sizeof(d), 0) == 0)
         inc_ev_count(&ev_count);

@@ -7,6 +7,13 @@
 #include <vector>
 #include <string>
 
+#if TMT_DEBUG_INTERVALS
+#define DBG_PRINT(x) do { std::cerr << x << std::endl; } while(0)
+#else
+#define DBG_PRINT(x) do {} while(0)
+#endif
+
+
 struct Node {
     uint32_t pid;
     std::string command;
@@ -150,15 +157,27 @@ void EventProcessor::compute_intervals(bool print_intervals) {
             root_->set_dead(e->parent_pid);
         }
 
+        int old_alive = time_intervals_.empty() ? -1 : time_intervals_.back().alive;
         int alive = root_->compute_alive();
+
         if (time_intervals_.empty() || time_intervals_.back().alive != alive) {
+            DBG_PRINT(
+                "[DBG] ts=" << e->timestamp
+                << " event=" << e->event
+                << " pid=" << e->pid
+                << " parent_pid=" << e->parent_pid
+                << " alive=" << old_alive << " -> " << alive
+            );            
             time_intervals_.push_back({ e->timestamp, alive });
         }
+
     }
 
     if (!time_intervals_.empty() && time_intervals_.back().time < max_ts) {
         int last_alive = time_intervals_.back().alive;
         time_intervals_.push_back({ max_ts, last_alive });
+
+        int old_alive = time_intervals_.empty() ? -1 : time_intervals_.back().alive;
     }
 
     std::cerr << "[INFO] Computed " << time_intervals_.size() << " time intervals.\n";

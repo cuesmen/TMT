@@ -4,6 +4,8 @@
 #include <string>
 #include <memory>
 
+#define TMT_DEBUG_INTERVALS 0 
+
 struct Node;
 
 struct TimeInterval {

@@ -10,6 +10,18 @@
 
 #include <args.hxx>
 
+static void print_banner() {
+    std::cout << R"(
+████████╗███╗   ███╗████████╗
+╚══██╔══╝████╗ ████║╚══██╔══╝
+   ██║   ██╔████╔██║   ██║   
+   ██║   ██║╚██╔╝██║   ██║   
+   ██║   ██║ ╚═╝ ██║   ██║   
+   ╚═╝   ╚═╝     ╚═╝   ╚═╝   
+ T h r e a d   M o n i t o r i n g   T o o l
+)" << std::endl;
+}
+
 static void usage(const char* prog) {
     std::cerr
         << "Usage:\n"
@@ -20,6 +32,9 @@ static void usage(const char* prog) {
 }
 
 int main(int argc, char** argv) {
+    // Stampa il banner all'avvio
+    print_banner();
+
     std::string cmd;
     bool print_raw = false;
 

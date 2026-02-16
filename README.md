@@ -151,8 +151,8 @@ If `gnuplot` is not installed, the `plots_all` target will simply print a messag
 ## Acknowledgements
 
 TMT was originally developed by  
-[**Stefano Monaldi**](https://www.linkedin.com/in/stefano-monaldi-0a9553296/)  
+[**Stefano Monaldi**](https://www.linkedin.com/in/stefano-monaldi-0a9553296/) and
+[**Cosmin Stoica**](https://www.linkedin.com/in/cosmin-stoica-037331296/),
 and is now maintained by  
 [**Marco Edoardo Santimaria**](https://alpha.di.unito.it/marco-santimaria/),  
-[**Robert Birke**](https://alpha.di.unito.it/robert-rene-maria-birke/) and  
-[**Cosmin Stoica**](https://www.linkedin.com/in/cosmin-stoica-037331296/).
+[**Robert Birke**](https://alpha.di.unito.it/robert-rene-maria-birke/)

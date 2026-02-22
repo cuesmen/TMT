@@ -147,6 +147,17 @@ bool SwitchHandler::install() {
         return false;
     }
 
+    bpf_program *fork_prog = bpf_object__find_program_by_name(obj_, "propagate_allow_on_fork");
+    if (!fork_prog) {
+        fprintf(stderr, "[switch] fork program not found\n");
+        return false;
+    }
+    link_fork_ = bpf_program__attach_tracepoint(fork_prog, "sched", "sched_process_fork");
+    if (!link_fork_) {
+        fprintf(stderr, "[switch] fork attach failed: %s\n", strerror(errno));
+        return false;
+    }
+
     set_cfg_enabled_map(map_cfg_);
 
     rb1_ = ring_buffer__new(map_rb_, sample_cb, this, nullptr);
@@ -163,6 +174,10 @@ void SwitchHandler::detach() {
     if (link_) {
         bpf_link__destroy(link_);
         link_ = nullptr;
+    }
+    if (link_fork_) {
+        bpf_link__destroy(link_fork_);
+        link_fork_ = nullptr;
     }
 }
 

@@ -1,6 +1,6 @@
-# ARG1: oncpu_slices.csv
-# ARG2: alive_series.csv
-# ARG3: output PNG
+# ============================================================
+# Threads & CPU Activity - Multi-Color Palette Version
+# ============================================================
 
 if (ARGC < 3) {
     print "Usage: gnuplot -c threads_over_time.gp <oncpu.csv> <alive.csv> <output.png>"
@@ -12,61 +12,68 @@ alive_file = ARG2
 outfile    = ARG3
 
 set datafile separator ","
-
-# 1600x800
-set terminal pngcairo size 1600,800 enhanced
+set terminal pngcairo size 1600,800 enhanced font 'Verdana,10'
 set output outfile
 
-# Global time range (from alive_series), in seconds
+# --- ANALISI DATI PER RANGE ---
 stats alive_file using ($1/1e9) nooutput
 tmin = STATS_min
 tmax = STATS_max
 if (tmax <= tmin) tmax = tmin + 1.0
 
-# Binning for scheduling activity
-nbins     = 50.0
+stats oncpu_file skip 1 using ($2) nooutput
+maxcpu = int(STATS_max)
+if (maxcpu < 0) maxcpu = 0
+
+# --- CONFIGURAZIONE BINNING ---
+nbins     = 80.0  # Aumentato un po' per unire meglio i dati in base alla densità
 binwidth  = (tmax - tmin)/nbins
-bin(x)    = tmin + binwidth * floor((x - tmin)/binwidth)
+bin(x)    = tmin + binwidth * floor((x - tmin)/binwidth) + binwidth/2.0
 
-# MULTIPLOT: 2 rows, 1 column
-# left, right, bottom, top
-set multiplot layout 2,1 title "Existing vs Scheduling Activity Over Time" \
-    margins 0.06,0.90,0.12,0.96 spacing 0.02,0.00
+# --- CONFIGURAZIONE MULTIPLOT ---
+set multiplot layout 2,1 title "{/:Bold Existing vs Scheduling Activity Over Time}" \
+    margins 0.08,0.85,0.12,0.92 spacing 0.05
 
-# TOP PANEL: alive threads (step function)
+# 1. TOP PANEL: Alive Threads
 set xrange [tmin:tmax]
 set xlabel ""
 set xtics format ""
 set ylabel "Alive threads"
-set grid
+set grid lc rgb "#DDDDDD"
 set key top left
 
 plot alive_file using ($1/1e9):2 \
-    with steps lw 3 lc rgb "#ff9900" title "Existing (alive)"
+    with steps lw 3 lc rgb "#FF9900" title "Existing (alive)"
 
-# BOTTOM PANEL: per-CPU scheduling activity
+# 2. BOTTOM PANEL: Scheduling Activity (Palette per CPU)
 set xrange [tmin:tmax]
 set xlabel "Time (s)"
 set xtics format "%g"
 set ylabel "Scheduling events"
-set grid
+set grid lc rgb "#DDDDDD"
 
-set style data boxes
-set style fill solid 0.55 border rgb "black"
-set boxwidth binwidth
+# Definizione Palette Discreta (Colori distinti per CPU)
+# Questa palette assegna colori netti invece di sfumature
+set palette defined ( \
+    0 "#1f77b4", \
+    1 "#ff7f0e", \
+    2 "#2ca02c", \
+    3 "#d62728", \
+    4 "#9467bd", \
+    5 "#8c564b", \
+    6 "#e377c2", \
+    7 "#7f7f7f" )
+set cbrange [0:maxcpu > 0 ? maxcpu : 1]
+unset colorbox
 
-set key outside right top
+set style fill solid 0.7 noborder # 'noborder' per unire meglio i blocchi vicini
+set boxwidth binwidth * 0.9      # Un pizzico di spazio tra i bin per chiarezza
 
-# CPU colors
-cpu0_color = "#1f77b4"
-cpu1_color = "#2ca02c"
-cpu2_color = "#ff7f0e"
-cpu3_color = "#d62728"
+set key outside right center font ",9"
 
-plot \
-    oncpu_file using (bin($4/1e9)):(($2==0)?1:1/0) smooth freq with boxes lc rgb cpu0_color title "CPU 0", \
-    oncpu_file using (bin($4/1e9)):(($2==1)?1:1/0) smooth freq with boxes lc rgb cpu1_color title "CPU 1", \
-    oncpu_file using (bin($4/1e9)):(($2==2)?1:1/0) smooth freq with boxes lc rgb cpu2_color title "CPU 2", \
-    oncpu_file using (bin($4/1e9)):(($2==3)?1:1/0) smooth freq with boxes lc rgb cpu3_color title "CPU 3"
+# Plot con ciclo per CPU usando colori della palette
+plot for [c=0:maxcpu] \
+    oncpu_file skip 1 using (bin($4/1e9)):(($2==c)?1:1/0) smooth freq \
+    with boxes lc palette cb c title sprintf("CPU %d", c)
 
 unset multiplot

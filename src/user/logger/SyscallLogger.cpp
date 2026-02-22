@@ -1,6 +1,7 @@
 #include "SyscallLogger.hpp"
 #include <unistd.h>
 #include <sys/wait.h>
+#include <signal.h>
 #include <iostream>
 #include <algorithm>
 #include <cstdlib>
@@ -71,6 +72,8 @@ void SyscallLogger::run_command(const std::string& cmd, bool print_raw) {
     }
 
     if (cmd_pid == 0) {
+        // Stop early to let the parent install BPF handlers before exec/spawn.
+        raise(SIGSTOP);
         auto args = split_args(cmd);
         if (args.empty()) {
             std::cerr << "Empty command\n";
@@ -89,7 +92,17 @@ void SyscallLogger::run_command(const std::string& cmd, bool print_raw) {
         }
     }
 
-    // passa the cmd_pid to the Event Processor
+    // wait for child to stop so we can attach before it execs/spawns
+    int st = 0;
+    if (waitpid(cmd_pid, &st, WUNTRACED) < 0) {
+        std::cerr << "waitpid (WUNTRACED) failed: " << strerror(errno) << "\n";
+        return;
+    }
+    if (!WIFSTOPPED(st)) {
+        std::cerr << "child did not stop as expected; continuing\n";
+    }
+
+    // pass cmd_pid to the Event Processor
     root_pid_ = static_cast<uint32_t>(cmd_pid);
 
     // pass the cmd_pid to the SwitchHandler
@@ -101,8 +114,12 @@ void SyscallLogger::run_command(const std::string& cmd, bool print_raw) {
 
     if (!install_all()) {
         std::cerr << "No handler installed successfully; aborting.\n";
+        kill(cmd_pid, SIGCONT);
         return;
     }
+
+    // resume the child once handlers are installed
+    kill(cmd_pid, SIGCONT);
 
     // wait the cmd end
     if (waitpid(cmd_pid, nullptr, 0) < 0) {

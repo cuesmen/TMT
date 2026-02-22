@@ -60,7 +60,7 @@ sudo build/bin/tmt_logger --cmd "<command to trace>" [--print-raw]
 ```bash
 sudo build/bin/tmt_logger --cmd "sleep 1"
 
-sudo build/bin/tmt_logger --cmd "python3 thread_test.py" --print-raw
+sudo build/bin/tmt_logger --cmd "example/python3 thread_test.py" --print-raw
 ```
 
 ### Options
@@ -135,7 +135,7 @@ If `gnuplot` is not installed, the `plots_all` target will simply print a messag
 2. **Run a trace**
 
    ```bash
-   sudo build/bin/tmt_logger --cmd "python3 thread_test.py"
+   sudo build/bin/tmt_logger --cmd "example/python3 thread_test.py"
    ```
 
 3. **Generate plots**
@@ -151,8 +151,8 @@ If `gnuplot` is not installed, the `plots_all` target will simply print a messag
 ## Acknowledgements
 
 TMT was originally developed by  
-[**Stefano Monaldi**](https://www.linkedin.com/in/stefano-monaldi-0a9553296/)  
+[**Stefano Monaldi**](https://www.linkedin.com/in/stefano-monaldi-0a9553296/) and
+[**Cosmin Stoica**](https://www.linkedin.com/in/cosmin-stoica-037331296/),
 and is now maintained by  
 [**Marco Edoardo Santimaria**](https://alpha.di.unito.it/marco-santimaria/),  
-[**Robert Birke**](https://alpha.di.unito.it/robert-rene-maria-birke/) and  
-[**Cosmin Stoica**](https://www.linkedin.com/in/cosmin-stoica-037331296/).
+[**Robert Birke**](https://alpha.di.unito.it/robert-rene-maria-birke/)

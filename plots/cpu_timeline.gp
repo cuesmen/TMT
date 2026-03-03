@@ -50,11 +50,11 @@ set style fill solid 1.0 noborder
 plot \
     for [c=0:maxcpu] c with lines lc rgb "#EEEEEE" lw 2 notitle, \
     for [c=0:maxcpu] input_file skip 1 using \
-    ( $2 == c ? bin($4) + bin_width/2.0 : 1/0 ) : \
+    ( $2 == c ? bin($5) + bin_width/2.0 : 1/0 ) : \
     ( c ) : \
-    ( bin($4) ) : \
-    ( bin($4) + bin_width + 0.5 ) : \
+    ( bin($5) ) : \
+    ( bin($5) + bin_width + 0.5 ) : \
     ( c - 0.2 ) : \
     ( c + 0.2 ) : \
-    ( to_ms($6) / bin_width ) \
+    ( to_ms($7) / bin_width ) \
     with boxxyerror lc palette notitle

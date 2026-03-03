@@ -73,7 +73,7 @@ set key outside right center font ",9"
 
 # Plot con ciclo per CPU usando colori della palette
 plot for [c=0:maxcpu] \
-    oncpu_file skip 1 using (bin($4/1e9)):(($2==c)?1:1/0) smooth freq \
+    oncpu_file skip 1 using (bin($5/1e9)):(($2==c)?1:1/0) smooth freq \
     with boxes lc palette cb c title sprintf("CPU %d", c)
 
 unset multiplot

@@ -7,6 +7,7 @@ struct Slice {
     uint32_t pid;
     uint32_t cpu;
     std::string command;
+    uint32_t rq_depth;
     uint64_t start_ns;
     uint64_t end_ns;
     uint64_t delta_ns;
@@ -24,6 +25,7 @@ public:
                                   const std::string& outfile_prefix = "out/top_runtime_cpu_") const;
 
 private:
+    uint64_t warmup_ns_{1000000000ULL};
     std::vector<Event> events_;
     std::vector<Slice> slices_;
 };

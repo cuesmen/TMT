@@ -4,6 +4,8 @@
 #include <map>
 #include <algorithm>
 #include <cmath>
+#include <cstdlib>
+#include <cerrno>
 
 //convert unit string to ns scale factor
 static double unit_scale(const std::string& u) {
@@ -14,8 +16,23 @@ static double unit_scale(const std::string& u) {
     throw std::invalid_argument("invalid time unit: " + u);
 }
 
+static uint64_t parse_warmup_ns_from_env() {
+    const char* v = std::getenv("TMT_WARMUP_NS");
+    if (!v || !*v)
+        return 0;
+        //return 500000000ULL; // default: discard first 1s of trace
+
+    errno = 0;
+    char* end = nullptr;
+    unsigned long long x = std::strtoull(v, &end, 10);
+    if (errno != 0 || end == v || *end != '\0')
+        return 0;    
+        //return 500000000ULL;
+    return static_cast<uint64_t>(x);
+}
+
 SwitchProcessor::SwitchProcessor(const std::vector<Event>& evs)
-: events_(evs) {
+: warmup_ns_(parse_warmup_ns_from_env()), events_(evs) {
     events_.erase(std::remove_if(events_.begin(), events_.end(),
                                  [](const Event& e) {
                                      return !(e.event == "run" || e.event == "desched");
@@ -26,7 +43,33 @@ SwitchProcessor::SwitchProcessor(const std::vector<Event>& evs)
 void SwitchProcessor::build_slices(bool debug) {
     std::cerr << "[SwitchProcessor] Processing " << events_.size() << " events\n";
 
-    std::map<uint32_t, std::tuple<uint64_t, uint32_t, std::string>> open;
+    std::stable_sort(events_.begin(), events_.end(),
+                     [](const Event& a, const Event& b) {
+                         if (a.timestamp != b.timestamp)
+                             return a.timestamp < b.timestamp;
+                         if (a.event == b.event)
+                             return false;
+                         return a.event == "run" && b.event == "desched";
+                     });
+
+    if (!events_.empty() && warmup_ns_ > 0) {
+        uint64_t cutoff = events_.front().timestamp + warmup_ns_;
+        auto old_sz = events_.size();
+        events_.erase(std::remove_if(events_.begin(), events_.end(),
+                                     [cutoff](const Event& e) { return e.timestamp < cutoff; }),
+                      events_.end());
+        std::cerr << "[SwitchProcessor] Warm-up discard: "
+                  << (old_sz - events_.size()) << " events dropped ("
+                  << warmup_ns_ << " ns)\n";
+    }
+
+    if (events_.empty()) {
+        std::cerr << "[SwitchProcessor] No events after warm-up filtering\n";
+        slices_.clear();
+        return;
+    }
+
+    std::map<uint32_t, std::tuple<uint64_t, uint32_t, std::string, uint32_t>> open;
     slices_.clear();
 
     for (const auto& e : events_) {
@@ -40,14 +83,15 @@ void SwitchProcessor::build_slices(bool debug) {
         uint64_t ts  = e.timestamp;
 
         if (e.event == "run") {
-            open[pid] = {ts, e.cpu, e.command};
+            open[pid] = {ts, e.cpu, e.command, e.rq_depth};
         } else if (e.event == "desched") {
             auto it = open.find(pid);
             if (it != open.end()) {
-                auto [start, cpu0, cmd0] = it->second;
+                auto [start, cpu0, cmd0, rq_depth0] = it->second;
                 if (ts > start) {
                     Slice s{
                         pid, cpu0, cmd0,
+                        rq_depth0,
                         start, ts, ts - start,
                         e.reason
                     };
@@ -65,9 +109,10 @@ void SwitchProcessor::build_slices(bool debug) {
             if (e.timestamp > end_ts) end_ts = e.timestamp;
 
         for (auto& [pid, tup] : open) {
-            auto [start, cpu0, cmd0] = tup;
+            auto [start, cpu0, cmd0, rq_depth0] = tup;
             Slice s{
                 pid, cpu0, cmd0,
+                rq_depth0,
                 start, end_ts, end_ts - start,
                 "end_of_trace"         
             };
@@ -82,9 +127,10 @@ void SwitchProcessor::build_slices(bool debug) {
 
 void SwitchProcessor::store_csv(const std::string& filename) const {
     std::ofstream f(filename);
-    f << "pid,cpu,command,start_ns,end_ns,delta_ns,reason\n";
+    f << "pid,cpu,command,rq_depth,start_ns,end_ns,delta_ns,reason\n";
     for (const auto& s : slices_) {
         f << s.pid << "," << s.cpu << "," << s.command << ","
+          << s.rq_depth << ","
           << s.start_ns << "," << s.end_ns << ","
           << s.delta_ns << "," << s.reason << "\n";
     }

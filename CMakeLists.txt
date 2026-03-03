@@ -179,9 +179,18 @@ if(TMT_ENABLE_PLOTS)
             COMMENT "Generating CPU scheduling timeline plot"
         )
 
+        add_custom_target(plot_rq_depth
+            COMMAND ${GNUPLOT_EXECUTABLE}
+                -c ${PLOTS_DIR}/rq_depth_all_cpus.gp
+                "${OUT_DIR}/oncpu_slices.csv"
+                "${OUT_DIR}/rq_depth_all_cpus.png"
+            DEPENDS tmt_logger
+            WORKING_DIRECTORY ${CMAKE_BINARY_DIR}
+            COMMENT "Generating rq depth all cpus plot"
+        )
 
         add_custom_target(plots_all
-            DEPENDS plot_threads_over_time plot_cpu_timeline
+            DEPENDS plot_threads_over_time plot_cpu_timeline plot_rq_depth
         )
     else()
         message(STATUS "Gnuplot not found: plot targets will be stubs")

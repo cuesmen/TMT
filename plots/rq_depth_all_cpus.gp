@@ -10,23 +10,23 @@ if (ARGC < 2) {
 input_file  = ARG1
 output_file = ARG2
 
-set terminal pngcairo size 1200, 400 enhanced font "Verdana,10"
+set terminal pdfcairo size 12cm,4cm enhanced font "Verdana,10"
 set output output_file
 set datafile separator ","
 
 # --- Palette Professionale ---
 set palette defined (0 "#ADD8E6", 1 "#FF0000")
-set cblabel "Carico (RQ Depth)"
+set cblabel "CPU Load"
 set cbrange [0:*]
 
-set title "CPU Load Heatmap (Basata su RQ Depth)"
-set xlabel "Tempo (ms)"
+set title "CPU Load Heatmap (Based on RQ Depth)"
+set xlabel "Time (s)"
 set ylabel "CPU"
 set yrange [-0.6:3.6] # Leggermente più ampio per non tagliare i bordi
 set ytics ("CPU 0" 0, "CPU 1" 1, "CPU 2" 2, "CPU 3" 3)
 set grid xtics lc rgb "#eeeeee"
 
-time_scale = 1000000.0
+time_scale = 1000000000.0
 # Spessore fisso matematico
 thickness = 0.25 
 

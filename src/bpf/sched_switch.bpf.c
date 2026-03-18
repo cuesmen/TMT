@@ -78,7 +78,7 @@ struct run_event_t {
     u32 pid;            // PID of subject task
     u32 type;           // 1: switch-in, 2: switch-out
     u32 reason;         // 0: runnable/yield, 1: blocked (prev_state != 0)
-    u32 rq_depth;       // NEW (remove in the next push) estimated runnable tasks on this CPU
+    u32 rq_depth;       // NEW (TODO remove in the next push) estimated runnable tasks on this CPU
     char comm[TASK_COMM_LEN];
     u32 parent_pid, child_pid, pgid, tid, tgid; 
     char command[TASK_COMM_LEN];

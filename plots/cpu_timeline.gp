@@ -11,15 +11,15 @@ input_file = ARG1
 output_file = ARG2
 
 set datafile separator ","
-set terminal pngcairo size 1200,400 enhanced font 'Verdana,10'
+set terminal pdfcairo size 12cm,4cm enhanced font "Verdana,10"
 set output output_file
 
 # --- AGGREGAZIONE AGGRESSIVA ---
 # Aumentando bin_width, unisci più dati nello stesso rettangolo.
-# 100ms è ottimo per "pulire" grafici con troppi micro-eventi.
-bin_width = 100.0  
-to_ms(x) = x / 1e6
-bin(x) = bin_width * floor(to_ms(x)/bin_width)
+# 0.1s è ottimo per "pulire" grafici con troppi micro-eventi.
+bin_width = 0.1
+to_s(x) = x / 1e9
+bin(x) = bin_width * floor(to_s(x)/bin_width)
 
 # Palette Azzurro -> Rosso
 set palette defined (0 "#ADD8E6", 1 "#FF0000")
@@ -27,7 +27,7 @@ set cbrange [0:1]
 set cblabel "CPU Load"
 
 set title "CPU Load Heatmap" font ",14,Bold"
-set xlabel "Time (ms)"
+set xlabel "Time (s)"
 set ylabel "CPU"
 
 # Detect max CPU id from data (skip header)
@@ -43,7 +43,7 @@ set format y "CPU %g"
 set style fill solid 1.0 noborder
 
 # --- LOGICA DI PLOT ---
-# Aggiungiamo '+ 0.5' alla coordinata xhigh per forzare i rettangoli
+# Aggiungiamo un piccolo delta alla coordinata xhigh per forzare i rettangoli
 # a "mordere" quello successivo, eliminando le micro-linee bianche.
 # ------------------------------------------------------------
 
@@ -53,8 +53,8 @@ plot \
     ( $2 == c ? bin($5) + bin_width/2.0 : 1/0 ) : \
     ( c ) : \
     ( bin($5) ) : \
-    ( bin($5) + bin_width + 0.5 ) : \
+    ( bin($5) + bin_width + (bin_width * 0.005) ) : \
     ( c - 0.2 ) : \
     ( c + 0.2 ) : \
-    ( to_ms($7) / bin_width ) \
+    ( to_s($7) / bin_width ) \
     with boxxyerror lc palette notitle

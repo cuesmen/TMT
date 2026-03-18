@@ -60,7 +60,7 @@ sudo build/bin/tmt_logger --cmd "<command to trace>" [--print-raw]
 ```bash
 sudo build/bin/tmt_logger --cmd "sleep 1"
 
-sudo build/bin/tmt_logger --cmd "example/python3 thread_test.py" --print-raw
+sudo build/bin/tmt_logger --cmd "python3 example/thread_test.py" --print-raw
 ```
 
 ### Options
@@ -135,7 +135,7 @@ If `gnuplot` is not installed, the `plots_all` target will simply print a messag
 2. **Run a trace**
 
    ```bash
-   sudo build/bin/tmt_logger --cmd "example/python3 thread_test.py"
+   sudo build/bin/tmt_logger --cmd "python3 example/thread_test.py"
    ```
 
 3. **Generate plots**

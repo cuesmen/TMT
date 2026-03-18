@@ -12,7 +12,7 @@ alive_file = ARG2
 outfile    = ARG3
 
 set datafile separator ","
-set terminal pngcairo size 1600,800 enhanced font 'Verdana,10'
+set terminal pdfcairo size 16cm,8cm enhanced font "Verdana,10"
 set output outfile
 
 # --- ANALISI DATI PER RANGE ---

@@ -163,7 +163,7 @@ if(TMT_ENABLE_PLOTS)
                 -c ${PLOTS_DIR}/threads_over_time.gp
                 "${OUT_DIR}/oncpu_slices.csv"
                 "${OUT_DIR}/alive_series.csv"
-                "${OUT_DIR}/threads_over_time.png"
+                "${OUT_DIR}/threads_over_time.pdf"
             DEPENDS tmt_logger
             WORKING_DIRECTORY ${CMAKE_BINARY_DIR}
             COMMENT "Generating threads_over_time plot with gnuplot"
@@ -173,7 +173,7 @@ if(TMT_ENABLE_PLOTS)
             COMMAND ${GNUPLOT_EXECUTABLE}
                 -c ${PLOTS_DIR}/cpu_timeline.gp
                 "${OUT_DIR}/oncpu_slices.csv"
-                "${OUT_DIR}/cpu_timeline.png"
+                "${OUT_DIR}/cpu_timeline.pdf"
             DEPENDS tmt_logger
             WORKING_DIRECTORY ${CMAKE_BINARY_DIR}
             COMMENT "Generating CPU scheduling timeline plot"
@@ -183,7 +183,7 @@ if(TMT_ENABLE_PLOTS)
             COMMAND ${GNUPLOT_EXECUTABLE}
                 -c ${PLOTS_DIR}/rq_depth_all_cpus.gp
                 "${OUT_DIR}/oncpu_slices.csv"
-                "${OUT_DIR}/rq_depth_all_cpus.png"
+                "${OUT_DIR}/rq_depth_all_cpus.pdf"
             DEPENDS tmt_logger
             WORKING_DIRECTORY ${CMAKE_BINARY_DIR}
             COMMENT "Generating rq depth all cpus plot"

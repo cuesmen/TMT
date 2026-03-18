@@ -19,15 +19,13 @@ static double unit_scale(const std::string& u) {
 static uint64_t parse_warmup_ns_from_env() {
     const char* v = std::getenv("TMT_WARMUP_NS");
     if (!v || !*v)
-        return 0;
-        //return 500000000ULL; // default: discard first 1s of trace
+        return 0; // default: no discard 
 
     errno = 0;
     char* end = nullptr;
     unsigned long long x = std::strtoull(v, &end, 10);
     if (errno != 0 || end == v || *end != '\0')
         return 0;    
-        //return 500000000ULL;
     return static_cast<uint64_t>(x);
 }
 

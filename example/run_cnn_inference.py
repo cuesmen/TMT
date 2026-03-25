@@ -1,12 +1,10 @@
 import time
 import torch
-from torchvision.models import resnet18
 
-model = resnet18(weights=None)
-torch.set_num_threads(torch.get_num_threads())
-torch.set_num_interop_threads(torch.get_num_threads())
+torch.set_num_threads(0)
+torch.set_num_interop_threads(0)
 
-model = resnet18(weights=None)
+model = torch.hub.load("pytorch/vision:v0.10.0", "resnet18", pretrained=False)
 model.eval()
 
 x = torch.randn(32, 3, 224, 224)

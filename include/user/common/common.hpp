@@ -11,7 +11,6 @@ struct Event {
     uint32_t tid{0};
     uint32_t tgid{0};
     uint32_t cpu{0};          
-    uint32_t rq_depth{0};
     std::string command;
     uint64_t timestamp{0};
     std::string timestamp_human;

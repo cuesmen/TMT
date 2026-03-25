@@ -19,7 +19,6 @@ struct run_event_t {
     uint32_t pid;
     uint32_t type;
     uint32_t reason;
-    uint32_t rq_depth;
     char     comm[16];
     uint32_t parent_pid, child_pid, pgid, tid, tgid;
     char     command[16];
@@ -159,50 +158,6 @@ bool SwitchHandler::install() {
         return false;
     }
 
-    bpf_program *wakeup_prog = bpf_object__find_program_by_name(obj_, "trace_sched_wakeup");
-    if (!wakeup_prog) {
-        fprintf(stderr, "[switch] wakeup program not found\n");
-        return false;
-    }
-    link_wakeup_ = bpf_program__attach_tracepoint(wakeup_prog, "sched", "sched_wakeup");
-    if (!link_wakeup_) {
-        fprintf(stderr, "[switch] wakeup attach failed: %s\n", strerror(errno));
-        return false;
-    }
-
-    bpf_program *wakeup_new_prog = bpf_object__find_program_by_name(obj_, "trace_sched_wakeup_new");
-    if (!wakeup_new_prog) {
-        fprintf(stderr, "[switch] wakeup_new program not found\n");
-        return false;
-    }
-    link_wakeup_new_ = bpf_program__attach_tracepoint(wakeup_new_prog, "sched", "sched_wakeup_new");
-    if (!link_wakeup_new_) {
-        fprintf(stderr, "[switch] wakeup_new attach failed: %s\n", strerror(errno));
-        return false;
-    }
-
-    bpf_program *migrate_prog = bpf_object__find_program_by_name(obj_, "trace_sched_migrate_task");
-    if (!migrate_prog) {
-        fprintf(stderr, "[switch] migrate program not found\n");
-        return false;
-    }
-    link_migrate_ = bpf_program__attach_tracepoint(migrate_prog, "sched", "sched_migrate_task");
-    if (!link_migrate_) {
-        fprintf(stderr, "[switch] migrate attach failed: %s\n", strerror(errno));
-        return false;
-    }
-
-    bpf_program *exit_prog = bpf_object__find_program_by_name(obj_, "trace_sched_process_exit");
-    if (!exit_prog) {
-        fprintf(stderr, "[switch] process_exit program not found\n");
-        return false;
-    }
-    link_exit_ = bpf_program__attach_tracepoint(exit_prog, "sched", "sched_process_exit");
-    if (!link_exit_) {
-        fprintf(stderr, "[switch] process_exit attach failed: %s\n", strerror(errno));
-        return false;
-    }
-
     set_cfg_enabled_map(map_cfg_);
 
     rb1_ = ring_buffer__new(map_rb_, sample_cb, this, nullptr);
@@ -224,22 +179,6 @@ void SwitchHandler::detach() {
         bpf_link__destroy(link_fork_);
         link_fork_ = nullptr;
     }
-    if (link_wakeup_) {
-        bpf_link__destroy(link_wakeup_);
-        link_wakeup_ = nullptr;
-    }
-    if (link_wakeup_new_) {
-        bpf_link__destroy(link_wakeup_new_);
-        link_wakeup_new_ = nullptr;
-    }
-    if (link_migrate_) {
-        bpf_link__destroy(link_migrate_);
-        link_migrate_ = nullptr;
-    }
-    if (link_exit_) {
-        bpf_link__destroy(link_exit_);
-        link_exit_ = nullptr;
-    }
 }
 
 void SwitchHandler::freeze_producer() {
@@ -259,8 +198,7 @@ int SwitchHandler::on_sample(void *data, size_t len) {
     e.event = (ev->type == 1) ? "run" : "desched";
     e.pid   = ev->pid;
     e.cpu   = ev->cpu;
-    e.rq_depth = ev->rq_depth;
-    e.reason = (ev->reason == 1) ? "blocked" : "runnable";
+    e.reason = (ev->reason == 1) ? "preempt" : "sleep";
     e.command = std::string(ev->comm);
     e.timestamp = ev->ts;
     e.timestamp_human = human_ts(ev->ts);

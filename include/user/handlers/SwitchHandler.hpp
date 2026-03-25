@@ -20,10 +20,6 @@ private:
     bpf_object* obj_{nullptr};
     bpf_link* link_{nullptr};
     bpf_link* link_fork_{nullptr};
-    bpf_link* link_wakeup_{nullptr};
-    bpf_link* link_wakeup_new_{nullptr};
-    bpf_link* link_migrate_{nullptr};
-    bpf_link* link_exit_{nullptr};
 
     int map_cfg_{-1};
     int map_ev_{-1};
